@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Home, 
@@ -17,11 +17,10 @@ import {
   AlertCircle,
   Lightbulb,
   Clock,
-  Layout,
   FastForward
 } from 'lucide-react';
 
-import { SkillArea, Difficulty, Problem, SessionResult, Domain } from './types';
+import { SkillArea, Difficulty, Problem, SessionResult } from './types';
 import { generateProblem } from './services/problemGenerator';
 import { saveSession, getStats } from './services/storageService';
 import { speechService } from './services/speechService';
@@ -74,11 +73,6 @@ export default function App() {
     setSubskillStats({});
     setMistakeTags([]);
     
-    // Adaptive logic: pick subskill with lowest accuracy if available
-    const stats = getStats();
-    const subskills = Object.keys(stats.subskillAccuracy).filter(s => s.startsWith(selectedSkill.toLowerCase()));
-    const weakestSubskill = subskills.sort((a, b) => stats.subskillAccuracy[a] - stats.subskillAccuracy[b])[0];
-    
     const firstProblem = generateProblem(selectedSkill, difficulty);
     setCurrentProblem(firstProblem);
     setTutorMessage(firstProblem.narrations.intro);
@@ -110,15 +104,8 @@ export default function App() {
       const nextIdx = problemIndex + 1;
       setProblemIndex(nextIdx);
       
-      // If followUpMode is on, generate a problem of the same subskill
-      let nextProblem;
-      if (followUpMode && currentProblem) {
-        nextProblem = generateProblem(skill, difficulty);
-        // Force same subskill logic could be added to generator, but for now just generate another
-        setFollowUpMode(false);
-      } else {
-        nextProblem = generateProblem(skill, difficulty);
-      }
+      const nextProblem = generateProblem(skill, difficulty);
+      if (followUpMode) setFollowUpMode(false);
       
       setCurrentProblem(nextProblem);
       setTutorMessage(nextProblem.narrations.intro);
@@ -131,7 +118,7 @@ export default function App() {
         setConstructionValues(nextProblem.visualData.values.map(() => 0));
       }
     }
-  }, [problemIndex, sessionLength, skill, difficulty, sessionResults, followUpMode, currentProblem, mistakeTags, subskillStats]);
+  }, [problemIndex, sessionLength, skill, difficulty, sessionResults, followUpMode, mistakeTags, subskillStats]);
 
   const checkAnswer = () => {
     if (!currentProblem) return;
@@ -144,7 +131,10 @@ export default function App() {
       return;
     }
 
-    const isAnswerCorrect = userInput.trim().toLowerCase() === currentProblem.correctAnswer.toString().toLowerCase();
+    const isGraphConstruction = currentProblem.skill === 'Graphing' && currentProblem.subskill === 'construction';
+    const isAnswerCorrect = isGraphConstruction
+      ? constructionValues.every((value, idx) => value === currentProblem.visualData.values[idx])
+      : userInput.trim().toLowerCase() === currentProblem.correctAnswer.toString().toLowerCase();
     
     // Update subskill stats
     const currentSubskill = currentProblem.subskill;
@@ -219,7 +209,7 @@ export default function App() {
     <div className="p-6 pb-24">
       <header className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Hi Buddy! 👋</h1>
+          <h1 className="text-3xl font-bold text-slate-900">Hi Pumpkin! 👋</h1>
           <p className="text-slate-500">Ready for some math fun?</p>
         </div>
         <div className="bg-yellow-100 px-3 py-1 rounded-full flex items-center gap-1 border border-yellow-200">
@@ -510,7 +500,7 @@ export default function App() {
             )}
           </AnimatePresence>
 
-          {!currentProblem.choices && (
+          {!currentProblem.choices && !(currentProblem.skill === 'Graphing' && currentProblem.subskill === 'construction') && (
             <Keypad 
               onPress={(v) => setUserInput(prev => (prev.length < 5 ? prev + v : prev))}
               onDelete={() => setUserInput(prev => prev.slice(0, -1))}
