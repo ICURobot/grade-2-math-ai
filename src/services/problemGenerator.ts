@@ -5,7 +5,7 @@
 
 import { Problem, SkillArea, Difficulty, Step } from '../types';
 
-const generateId = () => Math.random().toString(36).substr(2, 9);
+const generateId = () => Math.random().toString(36).slice(2, 11);
 
 export const generateProblem = (skill: SkillArea, difficulty: Difficulty): Problem => {
   const id = generateId();
@@ -32,7 +32,6 @@ function generateAddition(id: string, difficulty: Difficulty): Problem {
   
   if (difficulty === 'easy') {
     a = Math.floor(Math.random() * 40) + 10;
-    b = Math.floor(Math.random() * (9 - (a % 10))) + 10;
     const tensA = Math.floor(a / 10);
     const tensB = Math.floor(Math.random() * (9 - tensA));
     b = (tensB * 10) + (Math.floor(Math.random() * (9 - (a % 10))));
@@ -211,31 +210,58 @@ function generateGraphing(id: string, difficulty: Difficulty): Problem {
   const items = ['Apples', 'Bananas', 'Cherries', 'Dates'];
   const values = items.map(() => Math.floor(Math.random() * 10) + 1);
   const subskill = Math.random() > 0.5 ? 'interpretation' : 'construction';
-  
+
   const targetIndex = Math.floor(Math.random() * items.length);
   const otherIndex = (targetIndex + 1) % items.length;
   const diff = Math.abs(values[targetIndex] - values[otherIndex]);
-  
-  const question = `How many more ${values[targetIndex] > values[otherIndex] ? items[targetIndex] : items[otherIndex]} are there than ${values[targetIndex] > values[otherIndex] ? items[otherIndex] : items[targetIndex]}?`;
-  
+  const higherItem = values[targetIndex] > values[otherIndex] ? items[targetIndex] : items[otherIndex];
+  const lowerItem = values[targetIndex] > values[otherIndex] ? items[otherIndex] : items[targetIndex];
+
+  if (subskill === 'construction') {
+    return {
+      id,
+      domain: 'Data',
+      skill: 'Graphing',
+      subskill,
+      difficulty,
+      prompt: "Build the bar graph by tapping each bar to match the data table.",
+      question: "Build the bar graph to match the data!",
+      correctAnswer: values.join(','),
+      visualData: { items, values, title: 'Fruit Basket', yLabel: 'Count', xLabel: 'Fruit' },
+      steps: [
+        { label: 'Find the Data', content: `Check each fruit's count in the data table above the graph.` },
+        { label: 'Tap to Build', content: `Tap each bar repeatedly until it reaches the correct height.` },
+        { label: 'Check Labels', content: `Press "Check Labels" to confirm your title and axis labels, then submit.` }
+      ],
+      hints: ["Look at the data table. Find the value for each fruit.", "Tap the bar until the number matches. Each tap adds 1."],
+      narrations: {
+        intro: "Time to be a graph builder! Use the data table to fill in each bar.",
+        hint1: "Look at the data table above. Find how many of each fruit there are.",
+        hint2: "Tap each bar until it matches the number in the data table. Each tap goes up by 1!",
+        solution: `The values are: ${items.map((item, i) => `${item}: ${values[i]}`).join(', ')}.`,
+        success: "Amazing graph builder! Your data is perfectly represented!"
+      }
+    };
+  }
+
   return {
     id,
     domain: 'Data',
     skill: 'Graphing',
     subskill,
     difficulty,
-    prompt: "Look at the data and answer the question.",
-    question,
+    prompt: "Look at the graph and answer the question.",
+    question: `How many more ${higherItem} are there than ${lowerItem}?`,
     correctAnswer: diff,
     visualData: { items, values, title: 'Fruit Basket', yLabel: 'Count', xLabel: 'Fruit' },
     steps: [
-      { label: 'Read Data', content: `Find the values for both fruits.` },
-      { label: 'Compare', content: `Subtract the smaller value from the larger value.` }
+      { label: 'Read Data', content: `Find the bar for ${higherItem} and ${lowerItem}.` },
+      { label: 'Compare', content: `Subtract the smaller value from the larger value to find the difference.` }
     ],
     hints: ["Find the bar for each fruit mentioned.", "Count how many more are in the taller bar."],
     narrations: {
       intro: "Let's look at this graph. Can you compare the amounts?",
-      hint1: "First, find how many of each fruit there are.",
+      hint1: "First, find how many of each fruit there are by reading the bars.",
       hint2: "Subtract the smaller number from the bigger number to find the difference.",
       solution: `There are ${values[targetIndex]} of one and ${values[otherIndex]} of the other. The difference is ${diff}.`,
       success: "Data expert! You read that graph perfectly!"
@@ -260,7 +286,7 @@ function generateTime(id: string, difficulty: Difficulty): Problem {
     subskill = 'five-minute';
   }
 
-  const timeStr = `${hour}:${minute === 0 ? '00' : minute}`;
+  const timeStr = `${hour}:${String(minute).padStart(2, '0')}`;
   
   return {
     id,
@@ -294,7 +320,7 @@ function generateTimeChoices(h: number, m: number): string[] {
   while (choices.size < 4) {
     const rh = Math.floor(Math.random() * 12) + 1;
     const rm = Math.floor(Math.random() * 12) * 5;
-    choices.add(`${rh}:${rm === 0 ? '00' : rm}`);
+    choices.add(`${rh}:${String(rm).padStart(2, '0')}`);
   }
   return Array.from(choices).sort(() => Math.random() - 0.5);
 }
