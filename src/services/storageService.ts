@@ -51,11 +51,8 @@ export const saveSession = (result: SessionResult) => {
     stats.lastSessionDate = today;
   }
 
-  // Update subskill accuracy
-  Object.entries(result.subskillStats).forEach(([subskill, data]) => {
-    const current = stats.subskillAccuracy[subskill] || 0;
-    // Simple moving average or just recalculate from history?
-    // Let's recalculate from last 20 history items for that subskill
+  // Update subskill accuracy (recalculate from last 20 history items per subskill)
+  Object.entries(result.subskillStats).forEach(([subskill, _data]) => {
     const relevantSessions = stats.history
       .filter(h => h.subskillStats[subskill])
       .slice(-20);

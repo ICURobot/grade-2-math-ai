@@ -193,7 +193,10 @@ export default function App() {
       }
 
       setTimeout(() => {
-        setUserInput('');
+        // For construction mode, preserve userInput so Check Answer stays enabled
+        if (!(currentProblem.skill === 'Graphing' && currentProblem.subskill === 'construction')) {
+          setUserInput('');
+        }
         setIsCorrect(null);
       }, 1500);
     }
@@ -346,6 +349,19 @@ export default function App() {
             
             {currentProblem.skill === 'Graphing' && currentProblem.visualData && (
               <div className="mb-6">
+                {currentProblem.subskill === 'construction' && (
+                  <div className="mb-4 p-3 bg-orange-50 rounded-xl border border-orange-100">
+                    <p className="text-[10px] font-bold text-orange-500 uppercase tracking-wider mb-2">Data Table — tap bars to match</p>
+                    <div className="flex justify-center gap-4 flex-wrap">
+                      {currentProblem.visualData.items.map((item: string, i: number) => (
+                        <div key={i} className="text-center">
+                          <div className="text-xl font-black text-orange-600">{currentProblem.visualData.values[i]}</div>
+                          <div className="text-[10px] font-bold text-slate-500">{item}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <h4 className="font-bold text-slate-700 mb-4">{currentProblem.visualData.title}</h4>
                 <div className="flex justify-center items-end gap-2 h-32 border-b border-l border-slate-200 p-2">
                   {currentProblem.visualData.items.map((item: string, i: number) => (
