@@ -424,12 +424,12 @@ export default function App() {
                   ))}
                   {/* Hands */}
                   <div 
-                    className="absolute w-1 h-12 bg-slate-800 rounded-full origin-bottom"
-                    style={{ transform: `rotate(${currentProblem.visualData.hour * 30 + currentProblem.visualData.minute * 0.5}deg) translateY(-24px)` }}
+                    className="absolute left-1/2 bottom-1/2 w-1 h-12 bg-slate-800 rounded-full origin-bottom"
+                    style={{ transform: `translateX(-50%) rotate(${currentProblem.visualData.hour * 30 + currentProblem.visualData.minute * 0.5}deg)` }}
                   />
                   <div 
-                    className="absolute w-1 h-16 bg-indigo-500 rounded-full origin-bottom"
-                    style={{ transform: `rotate(${currentProblem.visualData.minute * 6}deg) translateY(-32px)` }}
+                    className="absolute left-1/2 bottom-1/2 w-1 h-16 bg-indigo-500 rounded-full origin-bottom"
+                    style={{ transform: `translateX(-50%) rotate(${currentProblem.visualData.minute * 6}deg)` }}
                   />
                   <div className="w-2 h-2 bg-slate-800 rounded-full z-10" />
                 </div>
