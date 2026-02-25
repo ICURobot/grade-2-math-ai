@@ -6,12 +6,12 @@
 import { initializeApp } from 'firebase/app';
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyA5wqQv7uKjqLrwKwjW3tTbgPThkpsHvA4',
-  authDomain: 'kids-flashcard-hadits.firebaseapp.com',
-  projectId: 'kids-flashcard-hadits',
-  storageBucket: 'kids-flashcard-hadits.firebasestorage.app',
-  messagingSenderId: '995269721344',
-  appId: '1:995269721344:web:277ec6346138a8544847e5',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
 export const app = initializeApp(firebaseConfig);
