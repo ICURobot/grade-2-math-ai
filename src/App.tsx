@@ -366,19 +366,21 @@ export default function App() {
                 <div className="flex justify-center items-end gap-2 h-32 border-b border-l border-slate-200 p-2">
                   {currentProblem.visualData.items.map((item: string, i: number) => (
                     <div key={i} className="flex flex-col items-center flex-1 max-w-[60px]">
-                      <motion.div 
-                        onClick={() => {
-                          if (currentProblem.subskill === 'construction') {
-                            const next = [...constructionValues];
-                            next[i] = (next[i] + 1) % 11;
-                            setConstructionValues(next);
-                            setUserInput(next.join(',')); // Use comma separated for internal check
-                          }
-                        }}
-                        initial={false}
-                        animate={{ height: `${(currentProblem.subskill === 'construction' ? constructionValues[i] : currentProblem.visualData.values[i]) * 10}%` }}
-                        className={`w-full rounded-t-md transition-all duration-300 ${currentProblem.subskill === 'construction' ? 'bg-orange-500 cursor-pointer hover:bg-orange-400' : 'bg-indigo-500'}`}
-                      />
+                      <div className="h-24 w-full flex items-end">
+                        <motion.div 
+                          onClick={() => {
+                            if (currentProblem.subskill === 'construction') {
+                              const next = [...constructionValues];
+                              next[i] = (next[i] + 1) % 11;
+                              setConstructionValues(next);
+                              setUserInput(next.join(',')); // Use comma separated for internal check
+                            }
+                          }}
+                          initial={false}
+                          animate={{ height: `${(currentProblem.subskill === 'construction' ? constructionValues[i] : currentProblem.visualData.values[i]) * 10}%` }}
+                          className={`w-full rounded-t-md transition-all duration-300 ${currentProblem.subskill === 'construction' ? 'bg-orange-500 cursor-pointer hover:bg-orange-400' : 'bg-indigo-500'}`}
+                        />
+                      </div>
                       <span className="text-[8px] font-bold text-slate-400 mt-2 truncate w-full">{item}</span>
                     </div>
                   ))}
@@ -421,12 +423,12 @@ export default function App() {
                   ))}
                   {/* Hands */}
                   <div 
-                    className="absolute w-1 h-12 bg-slate-800 rounded-full origin-bottom"
-                    style={{ transform: `rotate(${currentProblem.visualData.hour * 30 + currentProblem.visualData.minute * 0.5}deg) translateY(-24px)` }}
+                    className="absolute left-1/2 bottom-1/2 w-1 h-12 bg-slate-800 rounded-full origin-bottom"
+                    style={{ transform: `translateX(-50%) rotate(${currentProblem.visualData.hour * 30 + currentProblem.visualData.minute * 0.5}deg)` }}
                   />
                   <div 
-                    className="absolute w-1 h-16 bg-indigo-500 rounded-full origin-bottom"
-                    style={{ transform: `rotate(${currentProblem.visualData.minute * 6}deg) translateY(-32px)` }}
+                    className="absolute left-1/2 bottom-1/2 w-1 h-16 bg-indigo-500 rounded-full origin-bottom"
+                    style={{ transform: `translateX(-50%) rotate(${currentProblem.visualData.minute * 6}deg)` }}
                   />
                   <div className="w-2 h-2 bg-slate-800 rounded-full z-10" />
                 </div>

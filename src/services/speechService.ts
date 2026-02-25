@@ -19,7 +19,11 @@ class SpeechService {
 
   private loadVoices = () => {
     const voices = this.synth.getVoices();
-    this.voice = voices.find(v => v.name.includes('Google') || v.name.includes('Female')) || voices[0];
+    const englishVoice = voices.find(v =>
+      v.lang?.toLowerCase().startsWith('en') &&
+      (v.name.includes('Google') || v.name.includes('Female'))
+    );
+    this.voice = englishVoice || voices.find(v => v.lang?.toLowerCase().startsWith('en')) || voices[0];
   };
 
   speak(text: string, onEnd?: () => void) {
@@ -32,6 +36,7 @@ class SpeechService {
 
     const utterance = new SpeechSynthesisUtterance(text);
     if (this.voice) utterance.voice = this.voice;
+    utterance.lang = this.voice?.lang || 'en-US';
     utterance.rate = this.rate; 
     utterance.pitch = 1.1; 
     
