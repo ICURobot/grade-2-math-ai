@@ -363,21 +363,24 @@ export default function App() {
                   </div>
                 )}
                 <h4 className="font-bold text-slate-700 mb-4">{currentProblem.visualData.title}</h4>
-                <div className="flex justify-center items-end gap-2 h-32 border-b border-l border-slate-200 p-2">
+                <div className="flex justify-center gap-2 h-32 border-b border-l border-slate-200 p-2">
                   {currentProblem.visualData.items.map((item: string, i: number) => (
-                    <div key={i} className="flex flex-col items-center flex-1 max-w-[60px]">
-                      <motion.div 
-                        onClick={() => {
-                          if (currentProblem.subskill === 'construction') {
-                            const next = [...constructionValues];
-                            next[i] = (next[i] + 1) % 11;
-                            setConstructionValues(next);
-                            setUserInput(next.join(',')); // Use comma separated for internal check
-                          }
-                        }}
+                    <div
+                      key={i}
+                      className={`flex flex-col items-center justify-end flex-1 max-w-[60px] h-full ${currentProblem.subskill === 'construction' ? 'cursor-pointer' : ''}`}
+                      onClick={() => {
+                        if (currentProblem.subskill === 'construction') {
+                          const next = [...constructionValues];
+                          next[i] = (next[i] + 1) % 11;
+                          setConstructionValues(next);
+                          setUserInput(next.join(','));
+                        }
+                      }}
+                    >
+                      <motion.div
                         initial={false}
                         animate={{ height: `${(currentProblem.subskill === 'construction' ? constructionValues[i] : currentProblem.visualData.values[i]) * 10}%` }}
-                        className={`w-full rounded-t-md transition-all duration-300 ${currentProblem.subskill === 'construction' ? 'bg-orange-500 cursor-pointer hover:bg-orange-400' : 'bg-indigo-500'}`}
+                        className={`w-full rounded-t-md transition-all duration-300 ${currentProblem.subskill === 'construction' ? 'bg-orange-500 hover:bg-orange-400' : 'bg-indigo-500'}`}
                       />
                       <span className="text-[8px] font-bold text-slate-400 mt-2 truncate w-full">{item}</span>
                     </div>
