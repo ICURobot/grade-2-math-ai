@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "grade-2-math",
     "public": "dist",
     "ignore": [
       "firebase.json",
