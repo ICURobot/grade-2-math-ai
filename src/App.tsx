@@ -5,19 +5,21 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Home, 
-  Settings, 
-  BarChart2, 
-  ChevronRight, 
-  Star, 
-  Trophy, 
+import {
+  Home,
+  Settings,
+  BarChart2,
+  ChevronRight,
+  Star,
+  Trophy,
   X,
   CheckCircle2,
   AlertCircle,
   Lightbulb,
   Clock,
-  FastForward
+  FastForward,
+  Volume2,
+  Lock
 } from 'lucide-react';
 
 import { SkillArea, Difficulty, Problem, SessionResult } from './types';
@@ -45,6 +47,7 @@ export default function App() {
   const [sessionResults, setSessionResults] = useState<boolean[]>([]);
   const [hintLevel, setHintLevel] = useState(0);
   const [showSteps, setShowSteps] = useState(false);
+  const [hintCardVisible, setHintCardVisible] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   
   // Graphing Discipline
@@ -79,6 +82,7 @@ export default function App() {
     setUserInput('');
     setHintLevel(0);
     setShowSteps(false);
+    setHintCardVisible(false);
     setIsCorrect(null);
     setGraphLabelsVerified(false);
     if (firstProblem.skill === 'Graphing' && firstProblem.subskill === 'construction') {
@@ -112,6 +116,7 @@ export default function App() {
       setUserInput('');
       setHintLevel(0);
       setShowSteps(false);
+      setHintCardVisible(false);
       setIsCorrect(null);
       setGraphLabelsVerified(false);
       if (nextProblem.skill === 'Graphing' && nextProblem.subskill === 'construction') {
@@ -161,8 +166,8 @@ export default function App() {
       }, 2000);
     } else {
       setIsCorrect(false);
-      setHintLevel(prev => Math.min(prev + 1, 3));
-      
+      setHintLevel(prev => prev + 1);
+
       // Track mistake tags
       if (hintLevel === 0) {
         const newTags = [...mistakeTags];
@@ -181,16 +186,26 @@ export default function App() {
         setFollowUpMode(true); // Trigger reinforcement next
       }
 
-      const msg = hintLevel === 0 ? currentProblem.narrations.hint1 : 
-                  hintLevel === 1 ? currentProblem.narrations.hint2 : 
-                  currentProblem.narrations.solution;
-      
-      setTutorMessage(msg);
-      speechService.speak(msg);
-      
-      if (hintLevel >= 2) {
+      // Hints unlock after 2 wrong attempts (hintLevel reflects attempts so far before this one)
+      let msg: string;
+      if (hintLevel === 0) {
+        msg = "Hmm, not quite! Give it another try — you can do it! 💪";
+      } else if (hintLevel === 1) {
+        msg = "Almost! One more try… your hint is almost ready!";
+      } else if (hintLevel === 2) {
+        msg = currentProblem.narrations.hint1;
+        setHintCardVisible(true);
+      } else if (hintLevel === 3) {
+        msg = currentProblem.narrations.hint2;
+        setHintCardVisible(true);
+      } else {
+        msg = currentProblem.narrations.solution;
+        setHintCardVisible(true);
         setShowSteps(true);
       }
+
+      setTutorMessage(msg);
+      speechService.speak(msg);
 
       setTimeout(() => {
         // For construction mode, preserve userInput so Check Answer stays enabled
@@ -502,15 +517,65 @@ export default function App() {
             </AnimatePresence>
           </div>
 
-          <div className="flex justify-between items-center mb-2">
-            <button 
-              onClick={() => setShowSteps(!showSteps)}
-              className="text-indigo-600 text-sm font-bold flex items-center gap-1"
-            >
-              <Lightbulb size={16} />
-              {showSteps ? 'Hide Steps' : 'Show Steps'}
-            </button>
-          </div>
+          {/* Hint card — locked until 2 wrong attempts */}
+          <AnimatePresence>
+            {hintLevel < 2 && hintLevel > 0 && (
+              <motion.div
+                key="hint-locked"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                className="flex items-center gap-2 mb-4 px-4 py-3 rounded-2xl bg-slate-100 border border-slate-200 text-slate-400"
+              >
+                <Lock size={15} />
+                <span className="text-xs font-bold">
+                  Hint unlocks after {2 - hintLevel} more {2 - hintLevel === 1 ? 'try' : 'tries'}
+                </span>
+              </motion.div>
+            )}
+            {hintCardVisible && currentProblem && (
+              <motion.div
+                key="hint-card"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                className="mb-4 bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3"
+              >
+                <Lightbulb size={18} className="text-amber-500 mt-0.5 shrink-0" />
+                <div className="flex-1">
+                  <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1">Hint</p>
+                  <p className="text-sm text-amber-800 leading-relaxed">
+                    {hintLevel >= 4
+                      ? currentProblem.narrations.hint2
+                      : currentProblem.narrations.hint1}
+                  </p>
+                </div>
+                <button
+                  onClick={() => speechService.speak(
+                    hintLevel >= 4
+                      ? currentProblem.narrations.hint2
+                      : currentProblem.narrations.hint1
+                  )}
+                  className="shrink-0 p-2 rounded-full bg-amber-100 hover:bg-amber-200 text-amber-600 transition-colors"
+                  aria-label="Hear hint"
+                >
+                  <Volume2 size={16} />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {hintLevel >= 2 && (
+            <div className="flex justify-between items-center mb-2">
+              <button
+                onClick={() => setShowSteps(!showSteps)}
+                className="text-indigo-600 text-sm font-bold flex items-center gap-1"
+              >
+                <Lightbulb size={16} />
+                {showSteps ? 'Hide Steps' : 'Show Steps'}
+              </button>
+            </div>
+          )}
 
           <AnimatePresence>
             {showSteps && (
