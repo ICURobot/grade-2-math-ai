@@ -21,6 +21,8 @@ export const generateProblem = (skill: SkillArea, difficulty: Difficulty): Probl
       return generateGraphing(id, difficulty);
     case 'Time':
       return generateTime(id, difficulty);
+    case 'Fractions':
+      return generateFractions(id, difficulty);
     default:
       return generateAddition(id, difficulty);
   }
@@ -310,6 +312,140 @@ function generateTime(id: string, difficulty: Difficulty): Problem {
       hint2: "The long hand is the minute hand. Count by fives around the clock!",
       solution: `The short hand is at ${hour} and the long hand is at ${minute}. It is ${timeStr}.`,
       success: "Tick tock! You're a time-telling pro!"
+    }
+  };
+}
+
+function generateFractions(id: string, difficulty: Difficulty): Problem {
+  // Hard: comparing or equivalence problems
+  if (difficulty === 'hard') {
+    const type = Math.random() > 0.5 ? 'comparing' : 'equivalence';
+
+    if (type === 'equivalence') {
+      // 2/4 = 1/2
+      return {
+        id,
+        domain: 'Number',
+        skill: 'Fractions',
+        subskill: 'equivalence',
+        difficulty,
+        prompt: 'Find the equivalent fraction.',
+        question: '2/4 = ?',
+        correctAnswer: '1/2',
+        choices: ['1/2', '2/3', '1/4', '3/4'],
+        visualData: { type: 'fraction-bar', numerator: 2, denominator: 4 },
+        steps: [
+          { label: 'Look at the Shape', content: 'The bar is split into 4 equal parts. 2 are shaded.' },
+          { label: 'Notice the Pattern', content: 'The shaded part covers exactly HALF of the bar.' },
+          { label: 'Simplify', content: '2 out of 4 is the same as 1 out of 2. So 2/4 = 1/2.' }
+        ],
+        hints: [
+          'Look at the shaded bar. Is half of it shaded, a quarter, or more?',
+          '2 out of 4 equal parts — can you think of another way to say "half"?'
+        ],
+        narrations: {
+          intro: 'Two fourths equals which other fraction? Look at the shaded bar for a clue!',
+          hint1: 'Look at how much of the bar is shaded. Does it look like half?',
+          hint2: 'Two out of four is exactly the same as one out of two — they both mean half!',
+          solution: 'The bar has 4 parts and 2 are shaded, which is the same as 1 out of 2. So 2/4 equals 1/2.',
+          success: 'You found the matching fraction! Incredible!'
+        }
+      };
+    }
+
+    // Comparing: pick a random pair
+    const pairs: Array<{ a: [number, number]; b: [number, number]; answer: string }> = [
+      { a: [1, 2], b: [1, 4], answer: '1/2' },
+      { a: [1, 3], b: [1, 4], answer: '1/3' },
+      { a: [1, 2], b: [1, 3], answer: '1/2' },
+      { a: [3, 4], b: [1, 4], answer: '3/4' },
+      { a: [2, 3], b: [1, 3], answer: '2/3' },
+    ];
+    const pair = pairs[Math.floor(Math.random() * pairs.length)];
+    const [na, da] = pair.a;
+    const [nb, db] = pair.b;
+    const fracA = `${na}/${da}`;
+    const fracB = `${nb}/${db}`;
+    const wrongOpts = [`${na}/${da}`, `${nb}/${db}`, 'They are equal'].filter(c => c !== pair.answer);
+    const choices = [pair.answer, ...wrongOpts.slice(0, 3)].sort(() => Math.random() - 0.5);
+
+    return {
+      id,
+      domain: 'Number',
+      skill: 'Fractions',
+      subskill: 'comparing',
+      difficulty,
+      prompt: 'Which fraction is larger?',
+      question: `${fracA}  or  ${fracB}?`,
+      correctAnswer: pair.answer,
+      choices,
+      visualData: { type: 'fraction-compare', a: { n: na, d: da }, b: { n: nb, d: db } },
+      steps: [
+        { label: 'Read Both Fractions', content: `${fracA} means ${na} out of ${da} equal parts.\n${fracB} means ${nb} out of ${db} equal parts.` },
+        { label: 'Compare the Bars', content: 'Look at which bar has more shading. That fraction is larger.' },
+        { label: 'Answer', content: `${pair.answer} is the larger fraction.` }
+      ],
+      hints: [
+        'Think about sharing a pizza — which slice would be bigger?',
+        'Look at the shaded bars. The more shading, the bigger the fraction!'
+      ],
+      narrations: {
+        intro: `Which is bigger: ${fracA} or ${fracB}? Look at the bars to compare!`,
+        hint1: 'Imagine splitting a pizza. More slices means smaller pieces!',
+        hint2: 'Look at which bar has more shading. That one is the bigger fraction!',
+        solution: `${pair.answer} is bigger. Look at the shaded bars — it has more shading than the other.`,
+        success: 'Great comparing! You are a fraction expert!'
+      }
+    };
+  }
+
+  // Easy: halves and quarters | Medium: halves, thirds, and quarters
+  const denomOptions = difficulty === 'easy' ? [2, 4] : [2, 3, 4];
+  const denom = denomOptions[Math.floor(Math.random() * denomOptions.length)];
+  const numer = Math.floor(Math.random() * denom) + 1;
+  const fraction = `${numer}/${denom}`;
+  const subskill = denom === 2 ? 'halves' : denom === 3 ? 'thirds' : 'quarters';
+
+  // Build unique multiple-choice options
+  const choiceSet = new Set<string>([fraction]);
+  while (choiceSet.size < 4) {
+    const wd = denomOptions[Math.floor(Math.random() * denomOptions.length)];
+    const wn = Math.floor(Math.random() * wd) + 1;
+    choiceSet.add(`${wn}/${wd}`);
+  }
+  const choices = Array.from(choiceSet).sort(() => Math.random() - 0.5);
+
+  const partLabel = (n: number, d: number) => {
+    const name = d === 2 ? (n === 1 ? 'half' : 'halves') : d === 3 ? (n === 1 ? 'third' : 'thirds') : (n === 1 ? 'quarter' : 'quarters');
+    return name;
+  };
+
+  return {
+    id,
+    domain: 'Number',
+    skill: 'Fractions',
+    subskill,
+    difficulty,
+    prompt: `The bar is divided into ${denom} equal parts. ${numer} ${numer === 1 ? 'part is' : 'parts are'} shaded.`,
+    question: 'What fraction is shaded?',
+    correctAnswer: fraction,
+    choices,
+    visualData: { type: 'fraction-bar', numerator: numer, denominator: denom },
+    steps: [
+      { label: 'Count the Parts', content: `The bar is split into ${denom} equal parts. This is the bottom number (denominator).` },
+      { label: 'Count the Shaded Parts', content: `${numer} ${numer === 1 ? 'part is' : 'parts are'} shaded. This is the top number (numerator).` },
+      { label: 'Write the Fraction', content: `Shaded ÷ Total = ${numer} ÷ ${denom} = ${fraction} (${numer} ${partLabel(numer, denom)})` }
+    ],
+    hints: [
+      `Count how many equal parts the whole bar is divided into — that is the bottom number.`,
+      `Now count only the shaded parts — that is the top number.`
+    ],
+    narrations: {
+      intro: `Look at this bar! It is divided into ${denom} equal parts and ${numer} ${numer === 1 ? 'is' : 'are'} shaded. What fraction is that?`,
+      hint1: 'How many pieces is the bar split into? That number goes on the bottom of the fraction.',
+      hint2: 'Count the colored pieces — that number goes on top!',
+      solution: `The bar has ${denom} equal parts and ${numer} are shaded, so the fraction is ${fraction}.`,
+      success: 'You read the fraction perfectly! Fraction superstar!'
     }
   };
 }
