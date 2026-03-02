@@ -255,6 +255,7 @@ export default function App() {
           { id: 'Addition', label: 'Addition', icon: '➕', color: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
           { id: 'Subtraction', label: 'Subtraction', icon: '➖', color: 'bg-blue-50 text-blue-600 border-blue-100' },
           { id: 'Equality', label: 'Equality', icon: '⚖️', color: 'bg-purple-50 text-purple-600 border-purple-100' },
+          { id: 'Fractions', label: 'Fractions', icon: '🍕', color: 'bg-rose-50 text-rose-600 border-rose-100' },
           { id: 'Graphing', label: 'Data & Graphs', icon: '📊', color: 'bg-orange-50 text-orange-600 border-orange-100' },
           { id: 'Time', label: 'Telling Time', icon: '⏰', color: 'bg-pink-50 text-pink-600 border-pink-100' },
         ].map((item) => (
@@ -430,6 +431,43 @@ export default function App() {
                         {graphLabelsVerified ? '✓ Labels Checked' : 'Check Labels'}
                       </button>
                     </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {currentProblem.skill === 'Fractions' && currentProblem.visualData && (
+              <div className="flex flex-col items-center gap-4 mb-6">
+                {currentProblem.visualData.type === 'fraction-bar' && (
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="flex rounded-xl overflow-hidden border-2 border-rose-300 h-14" style={{ width: 240 }}>
+                      {Array.from({ length: currentProblem.visualData.denominator }).map((_: unknown, i: number) => (
+                        <div
+                          key={i}
+                          className={`flex-1 ${i < currentProblem.visualData.numerator ? 'bg-rose-400' : 'bg-rose-50'} ${i < currentProblem.visualData.denominator - 1 ? 'border-r-2 border-rose-300' : ''}`}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-xs font-bold text-rose-400 uppercase tracking-widest">
+                      {currentProblem.visualData.numerator} out of {currentProblem.visualData.denominator} parts shaded
+                    </p>
+                  </div>
+                )}
+                {currentProblem.visualData.type === 'fraction-compare' && (
+                  <div className="flex flex-col gap-3 w-full max-w-xs">
+                    {[currentProblem.visualData.a, currentProblem.visualData.b].map((frac: { n: number; d: number }, fi: number) => (
+                      <div key={fi} className="flex items-center gap-3">
+                        <span className="text-sm font-black text-rose-600 w-10 text-right">{frac.n}/{frac.d}</span>
+                        <div className="flex flex-1 rounded-lg overflow-hidden border-2 border-rose-300 h-10">
+                          {Array.from({ length: frac.d }).map((_: unknown, i: number) => (
+                            <div
+                              key={i}
+                              className={`flex-1 ${i < frac.n ? 'bg-rose-400' : 'bg-rose-50'} ${i < frac.d - 1 ? 'border-r-2 border-rose-300' : ''}`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>

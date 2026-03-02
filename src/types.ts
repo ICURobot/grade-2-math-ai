@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export type Domain = 'Operations' | 'Algebra' | 'Measurement' | 'Data';
-export type SkillArea = 'Addition' | 'Subtraction' | 'Equality' | 'Time' | 'Graphing';
+export type Domain = 'Operations' | 'Algebra' | 'Measurement' | 'Data' | 'Number';
+export type SkillArea = 'Addition' | 'Subtraction' | 'Equality' | 'Time' | 'Graphing' | 'Fractions';
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
 export interface Step {
