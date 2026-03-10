@@ -3,13 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Problem, SkillArea, Difficulty, Step } from '../types';
+import { Problem, SkillArea, Difficulty, Step, GradeLevel } from '../types';
+import { generateGrade3Problem } from './grade3Generator';
 
 const generateId = () => Math.random().toString(36).slice(2, 11);
 
-export const generateProblem = (skill: SkillArea, difficulty: Difficulty): Problem => {
+export const generateProblem = (skill: SkillArea, difficulty: Difficulty, grade: GradeLevel = 'grade2'): Problem => {
   const id = generateId();
-  
+  if (grade === 'grade3') return generateGrade3Problem(skill as any, difficulty);
+
   switch (skill) {
     case 'Addition':
       return generateAddition(id, difficulty);
@@ -63,6 +65,7 @@ function generateAddition(id: string, difficulty: Difficulty): Problem {
 
   return {
     id,
+    grade: 'grade2',
     domain: 'Operations',
     skill: 'Addition',
     subskill,
@@ -120,6 +123,7 @@ function generateSubtraction(id: string, difficulty: Difficulty): Problem {
 
   return {
     id,
+    grade: 'grade2',
     domain: 'Operations',
     skill: 'Subtraction',
     subskill,
@@ -189,6 +193,7 @@ function generateEquality(id: string, difficulty: Difficulty): Problem {
 
   return {
     id,
+    grade: 'grade2',
     domain: 'Algebra',
     skill: 'Equality',
     subskill: type,
@@ -222,6 +227,7 @@ function generateGraphing(id: string, difficulty: Difficulty): Problem {
   if (subskill === 'construction') {
     return {
       id,
+      grade: 'grade2',
       domain: 'Data',
       skill: 'Graphing',
       subskill,
@@ -229,7 +235,7 @@ function generateGraphing(id: string, difficulty: Difficulty): Problem {
       prompt: "Build the bar graph by tapping each bar to match the data table.",
       question: "Build the bar graph to match the data!",
       correctAnswer: values.join(','),
-      visualData: { items, values, title: 'Fruit Basket', yLabel: 'Count', xLabel: 'Fruit' },
+      visualData: { type: 'bar-graph', items, values, title: 'Fruit Basket', yLabel: 'Count', xLabel: 'Fruit', buildMode: true },
       steps: [
         { label: 'Find the Data', content: `Check each fruit's count in the data table above the graph.` },
         { label: 'Tap to Build', content: `Tap each bar repeatedly until it reaches the correct height.` },
@@ -248,6 +254,7 @@ function generateGraphing(id: string, difficulty: Difficulty): Problem {
 
   return {
     id,
+    grade: 'grade2',
     domain: 'Data',
     skill: 'Graphing',
     subskill,
@@ -255,7 +262,7 @@ function generateGraphing(id: string, difficulty: Difficulty): Problem {
     prompt: "Look at the graph and answer the question.",
     question: `How many more ${higherItem} are there than ${lowerItem}?`,
     correctAnswer: diff,
-    visualData: { items, values, title: 'Fruit Basket', yLabel: 'Count', xLabel: 'Fruit' },
+    visualData: { type: 'bar-graph', items, values, title: 'Fruit Basket', yLabel: 'Count', xLabel: 'Fruit' },
     steps: [
       { label: 'Read Data', content: `Find the bar for ${higherItem} and ${lowerItem}.` },
       { label: 'Compare', content: `Subtract the smaller value from the larger value to find the difference.` }
@@ -292,6 +299,7 @@ function generateTime(id: string, difficulty: Difficulty): Problem {
   
   return {
     id,
+    grade: 'grade2',
     domain: 'Measurement',
     skill: 'Time',
     subskill,
@@ -300,7 +308,7 @@ function generateTime(id: string, difficulty: Difficulty): Problem {
     question: "The clock shows...",
     correctAnswer: timeStr,
     choices: generateTimeChoices(hour, minute),
-    visualData: { hour, minute },
+    visualData: { type: 'clock', hour, minute },
     steps: [
       { label: 'Hour Hand', content: `Look at the short hand. It points to ${hour}.` },
       { label: 'Minute Hand', content: `Look at the long hand. It points to ${minute} minutes.` }
@@ -325,6 +333,7 @@ function generateFractions(id: string, difficulty: Difficulty): Problem {
       // 2/4 = 1/2
       return {
         id,
+        grade: 'grade2',
         domain: 'Number',
         skill: 'Fractions',
         subskill: 'equivalence',
@@ -371,6 +380,7 @@ function generateFractions(id: string, difficulty: Difficulty): Problem {
 
     return {
       id,
+      grade: 'grade2',
       domain: 'Number',
       skill: 'Fractions',
       subskill: 'comparing',
@@ -422,6 +432,7 @@ function generateFractions(id: string, difficulty: Difficulty): Problem {
 
   return {
     id,
+    grade: 'grade2',
     domain: 'Number',
     skill: 'Fractions',
     subskill,

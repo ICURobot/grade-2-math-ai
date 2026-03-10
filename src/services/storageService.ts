@@ -13,14 +13,20 @@ const defaultStats: UserStats = {
   lastSessionDate: null,
   history: [],
   subskillAccuracy: {},
-  mistakeTagCounts: {}
+  mistakeTagCounts: {},
+  gradePerformance: { grade2: { sessions: 0, stars: 0 }, grade3: { sessions: 0, stars: 0 } }
 };
 
 export const getStats = (): UserStats => {
   const stored = localStorage.getItem(STORAGE_KEY);
   if (!stored) return defaultStats;
   try {
-    return JSON.parse(stored);
+    const parsed = JSON.parse(stored);
+    return {
+      ...defaultStats,
+      ...parsed,
+      gradePerformance: { ...defaultStats.gradePerformance, ...(parsed.gradePerformance || {}) }
+    };
   } catch {
     return defaultStats;
   }
@@ -35,6 +41,9 @@ export const saveSession = (result: SessionResult) => {
 
   // Update stars
   stats.totalStars += result.correctCount;
+  stats.gradePerformance[result.grade] = stats.gradePerformance[result.grade] || { sessions: 0, stars: 0 };
+  stats.gradePerformance[result.grade].sessions += 1;
+  stats.gradePerformance[result.grade].stars += result.correctCount;
 
   // Update streak
   const today = new Date().toISOString().split('T')[0];

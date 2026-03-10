@@ -22,7 +22,7 @@ import {
   Lock
 } from 'lucide-react';
 
-import { SkillArea, Difficulty, Problem, SessionResult } from './types';
+import { SkillArea, Difficulty, Problem, SessionResult, GradeLevel } from './types';
 import { generateProblem } from './services/problemGenerator';
 import { saveSession, getStats } from './services/storageService';
 import { speechService } from './services/speechService';
@@ -30,11 +30,13 @@ import { speechService } from './services/speechService';
 import { Tutor } from './components/Tutor';
 import { Keypad } from './components/Keypad';
 import { Dashboard } from './components/Dashboard';
+import { grade3Topics } from './content/grade3Topics';
 
 type View = 'home' | 'session' | 'dashboard' | 'summary';
 
 export default function App() {
   const [view, setView] = useState<View>('home');
+  const [grade, setGrade] = useState<GradeLevel>('grade2');
   const [skill, setSkill] = useState<SkillArea>('Addition');
   const [difficulty, setDifficulty] = useState<Difficulty>('medium');
   const [sessionLength, setSessionLength] = useState(5);
@@ -76,7 +78,7 @@ export default function App() {
     setSubskillStats({});
     setMistakeTags([]);
     
-    const firstProblem = generateProblem(selectedSkill, difficulty);
+    const firstProblem = generateProblem(selectedSkill, difficulty, grade);
     setCurrentProblem(firstProblem);
     setTutorMessage(firstProblem.narrations.intro);
     setUserInput('');
@@ -85,7 +87,7 @@ export default function App() {
     setHintCardVisible(false);
     setIsCorrect(null);
     setGraphLabelsVerified(false);
-    if (firstProblem.skill === 'Graphing' && firstProblem.subskill === 'construction') {
+    if (firstProblem.visualData?.buildMode) {
       setConstructionValues(firstProblem.visualData.values.map(() => 0));
     }
     setView('session');
@@ -95,6 +97,7 @@ export default function App() {
     if (problemIndex + 1 >= sessionLength) {
       const finalResult: SessionResult = {
         date: new Date().toISOString(),
+        grade,
         skill,
         difficulty,
         totalQuestions: sessionLength,
@@ -108,7 +111,7 @@ export default function App() {
       const nextIdx = problemIndex + 1;
       setProblemIndex(nextIdx);
       
-      const nextProblem = generateProblem(skill, difficulty);
+      const nextProblem = generateProblem(skill, difficulty, grade);
       if (followUpMode) setFollowUpMode(false);
       
       setCurrentProblem(nextProblem);
@@ -119,24 +122,24 @@ export default function App() {
       setHintCardVisible(false);
       setIsCorrect(null);
       setGraphLabelsVerified(false);
-      if (nextProblem.skill === 'Graphing' && nextProblem.subskill === 'construction') {
+      if (nextProblem.visualData?.buildMode) {
         setConstructionValues(nextProblem.visualData.values.map(() => 0));
       }
     }
-  }, [problemIndex, sessionLength, skill, difficulty, sessionResults, followUpMode, mistakeTags, subskillStats]);
+  }, [problemIndex, sessionLength, skill, difficulty, grade, sessionResults, followUpMode, mistakeTags, subskillStats]);
 
   const checkAnswer = () => {
     if (!currentProblem) return;
     
     // Graphing discipline check
-    if (currentProblem.skill === 'Graphing' && currentProblem.subskill === 'construction' && !graphLabelsVerified) {
+    if (currentProblem.visualData?.buildMode && !graphLabelsVerified) {
       const msg = "Don't forget to check your Title and Axis Labels first!";
       setTutorMessage(msg);
       speechService.speak(msg);
       return;
     }
 
-    const isGraphConstruction = currentProblem.skill === 'Graphing' && currentProblem.subskill === 'construction';
+    const isGraphConstruction = !!currentProblem.visualData?.buildMode;
     const isAnswerCorrect = isGraphConstruction
       ? constructionValues.every((value, idx) => value === currentProblem.visualData.values[idx])
       : userInput.trim().toLowerCase() === currentProblem.correctAnswer.toString().toLowerCase();
@@ -209,7 +212,7 @@ export default function App() {
 
       setTimeout(() => {
         // For construction mode, preserve userInput so Check Answer stays enabled
-        if (!(currentProblem.skill === 'Graphing' && currentProblem.subskill === 'construction')) {
+        if (!currentProblem.visualData?.buildMode) {
           setUserInput('');
         }
         setIsCorrect(null);
@@ -249,16 +252,37 @@ export default function App() {
         </div>
       </div>
 
-      <h3 className="text-lg font-bold text-slate-800 mb-4">Pick a Skill</h3>
+      <div className="mb-4">
+        <h3 className="text-lg font-bold text-slate-800 mb-2">Choose Grade</h3>
+        <div className="flex gap-2">
+          {(['grade2', 'grade3'] as GradeLevel[]).map(g => (
+            <button
+              key={g}
+              onClick={() => {
+                setGrade(g);
+                setSkill(g === 'grade2' ? 'Addition' : 'Place Value and Rounding');
+              }}
+              className={`flex-1 py-3 rounded-xl text-sm font-bold uppercase border-2 transition-all ${grade === g ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-100 text-slate-500'}`}
+            >
+              {g === 'grade2' ? 'Grade 2' : 'Grade 3'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <h3 className="text-lg font-bold text-slate-800 mb-4">Pick a {grade === 'grade2' ? 'Skill' : 'Topic'}</h3>
       <div className="grid grid-cols-1 gap-4">
-        {[
-          { id: 'Addition', label: 'Addition', icon: '➕', color: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-          { id: 'Subtraction', label: 'Subtraction', icon: '➖', color: 'bg-blue-50 text-blue-600 border-blue-100' },
-          { id: 'Equality', label: 'Equality', icon: '⚖️', color: 'bg-purple-50 text-purple-600 border-purple-100' },
-          { id: 'Fractions', label: 'Fractions', icon: '🍕', color: 'bg-rose-50 text-rose-600 border-rose-100' },
-          { id: 'Graphing', label: 'Data & Graphs', icon: '📊', color: 'bg-orange-50 text-orange-600 border-orange-100' },
-          { id: 'Time', label: 'Telling Time', icon: '⏰', color: 'bg-pink-50 text-pink-600 border-pink-100' },
-        ].map((item) => (
+        {(grade === 'grade2'
+          ? [
+              { id: 'Addition', label: 'Addition', icon: '➕', color: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
+              { id: 'Subtraction', label: 'Subtraction', icon: '➖', color: 'bg-blue-50 text-blue-600 border-blue-100' },
+              { id: 'Equality', label: 'Equality', icon: '⚖️', color: 'bg-purple-50 text-purple-600 border-purple-100' },
+              { id: 'Fractions', label: 'Fractions', icon: '🍕', color: 'bg-rose-50 text-rose-600 border-rose-100' },
+              { id: 'Graphing', label: 'Data & Graphs', icon: '📊', color: 'bg-orange-50 text-orange-600 border-orange-100' },
+              { id: 'Time', label: 'Telling Time', icon: '⏰', color: 'bg-pink-50 text-pink-600 border-pink-100' },
+            ]
+          : grade3Topics
+        ).map((item) => (
           <button
             key={item.id}
             onClick={() => startSession(item.id as SkillArea)}
@@ -363,9 +387,9 @@ export default function App() {
           <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 mb-6 text-center">
             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">{currentProblem.prompt}</p>
             
-            {currentProblem.skill === 'Graphing' && currentProblem.visualData && (
+            {currentProblem.visualData?.type === 'bar-graph' && (
               <div className="mb-6">
-                {currentProblem.subskill === 'construction' && (
+                {currentProblem.visualData?.buildMode && (
                   <div className="mb-4 p-3 bg-orange-50 rounded-xl border border-orange-100">
                     <p className="text-[10px] font-bold text-orange-500 uppercase tracking-wider mb-2">Data Table — tap bars to match</p>
                     <div className="flex justify-center gap-4 flex-wrap">
@@ -389,13 +413,13 @@ export default function App() {
                   {/* Bar graph */}
                   <div className="flex flex-1 justify-center gap-2 h-32 border-b border-l border-slate-200 p-2">
                     {currentProblem.visualData.items.map((item: string, i: number) => {
-                      const val = currentProblem.subskill === 'construction' ? constructionValues[i] : currentProblem.visualData.values[i];
+                      const val = currentProblem.visualData?.buildMode ? constructionValues[i] : currentProblem.visualData.values[i];
                       return (
                         <div
                           key={i}
-                          className={`flex flex-col items-center justify-end flex-1 max-w-[60px] h-full ${currentProblem.subskill === 'construction' ? 'cursor-pointer' : ''}`}
+                          className={`flex flex-col items-center justify-end flex-1 max-w-[60px] h-full ${currentProblem.visualData?.buildMode ? 'cursor-pointer' : ''}`}
                           onClick={() => {
-                            if (currentProblem.subskill === 'construction') {
+                            if (currentProblem.visualData?.buildMode) {
                               const next = [...constructionValues];
                               next[i] = (next[i] + 1) % 11;
                               setConstructionValues(next);
@@ -407,7 +431,7 @@ export default function App() {
                           <motion.div
                             initial={false}
                             animate={{ height: `${val * 10}%` }}
-                            className={`w-full rounded-t-md transition-all duration-300 ${currentProblem.subskill === 'construction' ? 'bg-orange-500 hover:bg-orange-400' : 'bg-indigo-500'}`}
+                            className={`w-full rounded-t-md transition-all duration-300 ${currentProblem.visualData?.buildMode ? 'bg-orange-500 hover:bg-orange-400' : 'bg-indigo-500'}`}
                           />
                           <span className="text-[8px] font-bold text-slate-400 mt-2 truncate w-full">{item}</span>
                         </div>
@@ -420,7 +444,7 @@ export default function App() {
                   <span className="text-[8px] font-bold text-slate-300 uppercase">{currentProblem.visualData.yLabel}</span>
                 </div>
                 
-                {currentProblem.subskill === 'construction' && (
+                {currentProblem.visualData?.buildMode && (
                   <div className="mt-4 flex flex-col gap-2">
                     <p className="text-xs text-slate-500 italic">Tap the bars to match the data!</p>
                     <div className="flex justify-center gap-4">
@@ -436,7 +460,7 @@ export default function App() {
               </div>
             )}
 
-            {currentProblem.skill === 'Fractions' && currentProblem.visualData && (
+            {(currentProblem.visualData?.type === 'fraction-bar' || currentProblem.visualData?.type === 'fraction-compare') && (
               <div className="flex flex-col items-center gap-4 mb-6">
                 {currentProblem.visualData.type === 'fraction-bar' && (
                   <div className="flex flex-col items-center gap-2">
@@ -473,7 +497,7 @@ export default function App() {
               </div>
             )}
 
-            {currentProblem.skill === 'Time' && currentProblem.visualData && (
+            {currentProblem.visualData?.type === 'clock' && (
               <div className="flex justify-center mb-6">
                 <div className="relative w-40 h-40 rounded-full border-4 border-slate-800 bg-white flex items-center justify-center">
                   {/* Clock Numbers */}
@@ -502,6 +526,50 @@ export default function App() {
               </div>
             )}
 
+
+            {currentProblem.visualData?.type === 'place-value' && (
+              <div className="mb-6 bg-white border border-slate-100 rounded-2xl p-4">
+                <p className="text-xs uppercase tracking-widest font-bold text-violet-400 mb-2">Place Value Chart</p>
+                <div className="grid grid-cols-4 gap-2 text-center">
+                  {['Thousands', 'Hundreds', 'Tens', 'Ones'].map((h, i) => (
+                    <div key={h} className="bg-violet-50 rounded-xl p-2">
+                      <p className="text-[10px] font-bold text-violet-500">{h}</p>
+                      <p className="text-xl font-black text-violet-700">{Math.floor(currentProblem.visualData.number / Math.pow(10, 3 - i)) % 10}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {currentProblem.visualData?.type === 'array' && (
+              <div className="mb-6 flex flex-col items-center gap-1">
+                {Array.from({ length: currentProblem.visualData.rows }).map((_, ri) => (
+                  <div key={ri} className="flex gap-1">
+                    {Array.from({ length: currentProblem.visualData.cols }).map((__, ci) => (
+                      <span key={ci} className="w-3 h-3 rounded-full bg-cyan-400 inline-block" />
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {currentProblem.visualData?.type === 'coins' && (
+              <div className="mb-6 flex flex-wrap justify-center gap-2">
+                {currentProblem.visualData.coins.map((coin: number, i: number) => (
+                  <div key={i} className="w-12 h-12 rounded-full bg-yellow-100 border-2 border-yellow-300 flex items-center justify-center text-xs font-black text-yellow-700">{coin}¢</div>
+                ))}
+              </div>
+            )}
+
+            {currentProblem.visualData?.type === 'grid-rect' && (
+              <div className="mb-6 flex justify-center">
+                <div className="grid gap-[2px] bg-slate-300 p-[2px] rounded" style={{ gridTemplateColumns: `repeat(${currentProblem.visualData.l}, minmax(0, 14px))` }}>
+                  {Array.from({ length: currentProblem.visualData.l * currentProblem.visualData.w }).map((_, i) => (
+                    <div key={i} className="w-[14px] h-[14px] bg-lime-100" />
+                  ))}
+                </div>
+              </div>
+            )}
             <h2 className="text-4xl font-black text-slate-800 tracking-tight mb-4">
               {currentProblem.question.split('__').map((part, i) => (
                 <React.Fragment key={i}>
@@ -635,7 +703,7 @@ export default function App() {
             )}
           </AnimatePresence>
 
-          {!currentProblem.choices && !(currentProblem.skill === 'Graphing' && currentProblem.subskill === 'construction') && (
+          {!currentProblem.choices && !currentProblem.visualData?.buildMode && (
             <Keypad 
               onPress={(v) => setUserInput(prev => (prev.length < 5 ? prev + v : prev))}
               onDelete={() => setUserInput(prev => prev.slice(0, -1))}
