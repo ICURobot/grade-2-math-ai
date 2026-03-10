@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { motion } from 'motion/react';
-import { Star, TrendingUp, Calendar, Award, AlertTriangle, Target } from 'lucide-react';
+import { Star, TrendingUp, Calendar, Award, AlertTriangle, Target, GraduationCap } from 'lucide-react';
 import { getStats } from '../services/storageService';
 
 export const Dashboard: React.FC = () => {
@@ -39,7 +39,24 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {sortedSubskills.length > 0 && (
+
+      <section className="mb-8">
+        <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <GraduationCap size={20} className="text-indigo-500" />
+          By Grade
+        </h2>
+        <div className="grid grid-cols-2 gap-3">
+          {Object.entries(stats.gradePerformance).map(([grade, data]) => (
+            <div key={grade} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+              <p className="text-xs font-bold uppercase text-slate-400">{grade.replace('grade', 'Grade ')}</p>
+              <p className="text-lg font-black text-slate-800">{data.sessions} sessions</p>
+              <p className="text-sm text-indigo-600 font-bold">⭐ {data.stars} stars</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+            {sortedSubskills.length > 0 && (
         <section className="mb-8">
           <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
             <Target size={20} className="text-red-500" />
@@ -118,6 +135,7 @@ export const Dashboard: React.FC = () => {
             <div key={i} className="bg-white p-4 rounded-xl shadow-sm border border-slate-50 flex justify-between items-center">
               <div>
                 <p className="font-medium text-slate-800 capitalize">{session.skill}</p>
+                <p className="text-[10px] uppercase text-indigo-400 font-bold">{(session.grade || 'grade2').replace('grade', 'Grade ')}</p>
                 <p className="text-xs text-slate-400">{new Date(session.date).toLocaleDateString()}</p>
               </div>
               <div className="text-right">
