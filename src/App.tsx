@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Home,
@@ -61,6 +61,9 @@ export default function App() {
   const [mistakeTags, setMistakeTags] = useState<string[]>([]);
   const [followUpMode, setFollowUpMode] = useState(false);
 
+  // Grade 3 anti-repeat: tracks problem signatures seen in the current session
+  const seenSignaturesRef = useRef<Set<string>>(new Set());
+
   // Home Screen State
   const [stats, setStats] = useState(getStats());
 
@@ -71,14 +74,42 @@ export default function App() {
     }
   }, [view]);
 
+  /**
+   * Generates a problem for grade3, retrying up to MAX_RETRIES times to avoid
+   * repeating a question already seen in this session. Falls back to the last
+   * generated problem if all retries produce duplicates.
+   * Grade2 problems pass through unchanged.
+   */
+  const generateNextProblem = useCallback(
+    (selectedSkill: SkillArea, diff: Difficulty, gradeLevel: GradeLevel): Problem => {
+      if (gradeLevel !== 'grade3') return generateProblem(selectedSkill, diff, gradeLevel);
+      const MAX_RETRIES = 10;
+      let problem = generateProblem(selectedSkill, diff, gradeLevel);
+      for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+        const sig = `${problem.skill}|${problem.subskill}|${problem.question}|${problem.correctAnswer}`;
+        if (!seenSignaturesRef.current.has(sig)) {
+          seenSignaturesRef.current.add(sig);
+          return problem;
+        }
+        problem = generateProblem(selectedSkill, diff, gradeLevel);
+      }
+      // Accept whatever we have after exhausting retries
+      const sig = `${problem.skill}|${problem.subskill}|${problem.question}|${problem.correctAnswer}`;
+      seenSignaturesRef.current.add(sig);
+      return problem;
+    },
+    []
+  );
+
   const startSession = (selectedSkill: SkillArea) => {
     setSkill(selectedSkill);
     setProblemIndex(0);
     setSessionResults([]);
     setSubskillStats({});
     setMistakeTags([]);
-    
-    const firstProblem = generateProblem(selectedSkill, difficulty, grade);
+    seenSignaturesRef.current = new Set();
+
+    const firstProblem = generateNextProblem(selectedSkill, difficulty, grade);
     setCurrentProblem(firstProblem);
     setTutorMessage(firstProblem.narrations.intro);
     setUserInput('');
@@ -111,7 +142,7 @@ export default function App() {
       const nextIdx = problemIndex + 1;
       setProblemIndex(nextIdx);
       
-      const nextProblem = generateProblem(skill, difficulty, grade);
+      const nextProblem = generateNextProblem(skill, difficulty, grade);
       if (followUpMode) setFollowUpMode(false);
       
       setCurrentProblem(nextProblem);
@@ -126,7 +157,7 @@ export default function App() {
         setConstructionValues(nextProblem.visualData.values.map(() => 0));
       }
     }
-  }, [problemIndex, sessionLength, skill, difficulty, grade, sessionResults, followUpMode, mistakeTags, subskillStats]);
+  }, [problemIndex, sessionLength, skill, difficulty, grade, sessionResults, followUpMode, mistakeTags, subskillStats, generateNextProblem]);
 
   const checkAnswer = () => {
     if (!currentProblem) return;
@@ -403,42 +434,50 @@ export default function App() {
                   </div>
                 )}
                 <h4 className="font-bold text-slate-700 mb-4">{currentProblem.visualData.title}</h4>
-                <div className="flex items-end">
-                  {/* Y-axis labels */}
-                  <div className="flex flex-col-reverse justify-between h-32 pr-1 pb-5">
-                    {[0, 2, 4, 6, 8, 10].map(n => (
-                      <span key={n} className="text-[9px] font-bold text-slate-400 leading-none">{n}</span>
-                    ))}
-                  </div>
-                  {/* Bar graph */}
-                  <div className="flex flex-1 justify-center gap-2 h-32 border-b border-l border-slate-200 p-2">
-                    {currentProblem.visualData.items.map((item: string, i: number) => {
-                      const val = currentProblem.visualData?.buildMode ? constructionValues[i] : currentProblem.visualData.values[i];
-                      return (
-                        <div
-                          key={i}
-                          className={`flex flex-col items-center justify-end flex-1 max-w-[60px] h-full ${currentProblem.visualData?.buildMode ? 'cursor-pointer' : ''}`}
-                          onClick={() => {
-                            if (currentProblem.visualData?.buildMode) {
-                              const next = [...constructionValues];
-                              next[i] = (next[i] + 1) % 11;
-                              setConstructionValues(next);
-                              setUserInput(next.join(','));
-                            }
-                          }}
-                        >
-                          <span className="text-[9px] font-black text-slate-600 mb-0.5">{val > 0 ? val : ''}</span>
-                          <motion.div
-                            initial={false}
-                            animate={{ height: `${val * 10}%` }}
-                            className={`w-full rounded-t-md transition-all duration-300 ${currentProblem.visualData?.buildMode ? 'bg-orange-500 hover:bg-orange-400' : 'bg-indigo-500'}`}
-                          />
-                          <span className="text-[8px] font-bold text-slate-400 mt-2 truncate w-full">{item}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+                {(() => {
+                  const dataMax: number = Math.max(...(currentProblem.visualData.values as number[]));
+                  const graphMax = dataMax <= 10 ? 10 : Math.ceil(dataMax / 2) * 2;
+                  const tickStep = 2;
+                  const yTicks = Array.from({ length: Math.floor(graphMax / tickStep) + 1 }, (_, k) => k * tickStep);
+                  return (
+                    <div className="flex items-end">
+                      {/* Y-axis labels */}
+                      <div className="flex flex-col-reverse justify-between h-32 pr-1 pb-5">
+                        {yTicks.map(n => (
+                          <span key={n} className="text-[9px] font-bold text-slate-400 leading-none">{n}</span>
+                        ))}
+                      </div>
+                      {/* Bar graph */}
+                      <div className="flex flex-1 justify-center gap-2 h-32 border-b border-l border-slate-200 p-2">
+                        {currentProblem.visualData.items.map((item: string, i: number) => {
+                          const val = currentProblem.visualData?.buildMode ? constructionValues[i] : currentProblem.visualData.values[i];
+                          return (
+                            <div
+                              key={i}
+                              className={`flex flex-col items-center justify-end flex-1 max-w-[60px] h-full ${currentProblem.visualData?.buildMode ? 'cursor-pointer' : ''}`}
+                              onClick={() => {
+                                if (currentProblem.visualData?.buildMode) {
+                                  const next = [...constructionValues];
+                                  next[i] = (next[i] + 1) % (graphMax + 1);
+                                  setConstructionValues(next);
+                                  setUserInput(next.join(','));
+                                }
+                              }}
+                            >
+                              <span className="text-[9px] font-black text-slate-600 mb-0.5">{val > 0 ? val : ''}</span>
+                              <motion.div
+                                initial={false}
+                                animate={{ height: `${(val / graphMax) * 100}%` }}
+                                className={`w-full rounded-t-md transition-all duration-300 ${currentProblem.visualData?.buildMode ? 'bg-orange-500 hover:bg-orange-400' : 'bg-indigo-500'}`}
+                              />
+                              <span className="text-[8px] font-bold text-slate-400 mt-2 truncate w-full">{item}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
                 <div className="flex justify-between mt-1 px-4">
                   <span className="text-[8px] font-bold text-slate-300 uppercase">{currentProblem.visualData.xLabel}</span>
                   <span className="text-[8px] font-bold text-slate-300 uppercase">{currentProblem.visualData.yLabel}</span>
