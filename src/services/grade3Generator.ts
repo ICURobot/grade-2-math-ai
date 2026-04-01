@@ -324,6 +324,7 @@ function wordProblems(difficulty: Difficulty): Problem {
 
 function base(skill: Grade3Topic, subskill: string, difficulty: Difficulty, question: string, correctAnswer: string | number, choices: (string | number)[] | undefined, domain: Problem['domain'], steps: Step[], visualData?: any): Problem {
   const uniqChoices = choices ? Array.from(new Set(choices.map(c => c.toString()))).map(v => (typeof correctAnswer === 'number' && !Number.isNaN(Number(v)) ? Number(v) : v)) : undefined;
+  const shuffledChoices = uniqChoices ? [...uniqChoices].sort(() => Math.random() - 0.5).slice(0, 4) : undefined;
   return {
     id: id(),
     grade: 'grade3',
@@ -334,7 +335,7 @@ function base(skill: Grade3Topic, subskill: string, difficulty: Difficulty, ques
     prompt: `Grade 3 • ${skill}`,
     question,
     correctAnswer,
-    choices: uniqChoices?.slice(0, 4),
+    choices: shuffledChoices,
     steps,
     hints: ['Try to spot the math pattern first.', 'Break the problem into smaller steps.'],
     narrations: {
