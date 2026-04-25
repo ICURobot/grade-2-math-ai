@@ -17,6 +17,8 @@ export const generateProblem = (skill: SkillArea, difficulty: Difficulty, grade:
       return generateAddition(id, difficulty);
     case 'Subtraction':
       return generateSubtraction(id, difficulty);
+    case 'Division':
+      return generateDivision(id, difficulty);
     case 'Equality':
       return generateEquality(id, difficulty);
     case 'Graphing':
@@ -84,6 +86,60 @@ function generateAddition(id: string, difficulty: Difficulty): Problem {
       hint2: needsRegroup ? "Since the ones add up to more than 9, we need to regroup a ten to the tens place." : "Just add the ones and then the tens together.",
       solution: `First, ${onesA} plus ${onesB} is ${onesA + onesB}. Then add the tens. The total is ${sum}.`,
       success: "Fantastic addition! You're a math star!"
+    }
+  };
+}
+
+function generateDivision(id: string, difficulty: Difficulty): Problem {
+  let divisor = 2;
+  let quotient = 2;
+  let subskill = 'equal-groups';
+
+  if (difficulty === 'easy') {
+    divisor = Math.floor(Math.random() * 3) + 2; // 2..4
+    quotient = Math.floor(Math.random() * 6) + 2; // 2..7
+    subskill = 'equal-groups';
+  } else if (difficulty === 'medium') {
+    divisor = Math.floor(Math.random() * 4) + 2; // 2..5
+    quotient = Math.floor(Math.random() * 6) + 4; // 4..9
+    subskill = 'skip-counting';
+  } else {
+    divisor = Math.floor(Math.random() * 4) + 3; // 3..6
+    quotient = Math.floor(Math.random() * 5) + 6; // 6..10
+    subskill = 'inverse-multiplication';
+  }
+
+  const dividend = divisor * quotient;
+  const repeatedSubtractions = Array.from({ length: quotient }, (_, i) => dividend - (i + 1) * divisor);
+
+  return {
+    id,
+    grade: 'grade2',
+    domain: 'Operations',
+    skill: 'Division',
+    subskill,
+    difficulty,
+    prompt: `Split ${dividend} into equal groups of ${divisor}.`,
+    question: `${dividend} ÷ ${divisor} = ?`,
+    correctAnswer: quotient,
+    visualData: { type: 'division-groups', total: dividend, groupSize: divisor, groups: quotient },
+    steps: [
+      { label: 'Understand the Symbol', content: `${dividend} ÷ ${divisor} asks: "How many groups of ${divisor} can we make from ${dividend}?"` },
+      { label: 'Make Equal Groups', content: `Build groups with ${divisor} in each group until all ${dividend} items are used.` },
+      { label: 'Count the Groups', content: `There are ${quotient} equal groups, so ${dividend} ÷ ${divisor} = ${quotient}.` },
+      { label: 'Check with Multiplication', content: `${quotient} × ${divisor} = ${dividend}, so the answer is correct.` },
+      { label: 'Repeated Subtraction (Bonus)', content: repeatedSubtractions.map((left, i) => `${i === 0 ? dividend : repeatedSubtractions[i - 1]} - ${divisor} = ${left}`).join('\n') }
+    ],
+    hints: [
+      `Think of sharing ${dividend} objects so each group gets ${divisor}.`,
+      `You can also ask: what number times ${divisor} equals ${dividend}?`
+    ],
+    narrations: {
+      intro: `Let's learn division! We have ${dividend} items, and each group must have ${divisor}. How many groups can we make?`,
+      hint1: `Start making equal groups with ${divisor} in each group.`,
+      hint2: `Try multiplication: what number times ${divisor} gives ${dividend}?`,
+      solution: `There are ${quotient} groups of ${divisor} in ${dividend}. So ${dividend} divided by ${divisor} equals ${quotient}.`,
+      success: 'Awesome! You understood division using equal groups!'
     }
   };
 }
