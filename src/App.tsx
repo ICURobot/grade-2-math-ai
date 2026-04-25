@@ -30,6 +30,7 @@ import { speechService } from './services/speechService';
 import { Tutor } from './components/Tutor';
 import { Keypad } from './components/Keypad';
 import { Dashboard } from './components/Dashboard';
+import { DivisionLesson } from './components/DivisionLesson';
 import { grade3Topics } from './content/grade3Topics';
 
 type View = 'home' | 'session' | 'dashboard' | 'summary';
@@ -51,6 +52,7 @@ export default function App() {
   const [showSteps, setShowSteps] = useState(false);
   const [hintCardVisible, setHintCardVisible] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+  const [showDivisionLesson, setShowDivisionLesson] = useState(false);
   
   // Graphing Discipline
   const [graphLabelsVerified, setGraphLabelsVerified] = useState(false);
@@ -117,6 +119,7 @@ export default function App() {
     setShowSteps(false);
     setHintCardVisible(false);
     setIsCorrect(null);
+    setShowDivisionLesson(grade === 'grade2' && selectedSkill === 'Division');
     setGraphLabelsVerified(false);
     if (firstProblem.visualData?.buildMode) {
       setConstructionValues(firstProblem.visualData.values.map(() => 0));
@@ -307,6 +310,7 @@ export default function App() {
           ? [
               { id: 'Addition', label: 'Addition', icon: '➕', color: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
               { id: 'Subtraction', label: 'Subtraction', icon: '➖', color: 'bg-blue-50 text-blue-600 border-blue-100' },
+              { id: 'Division', label: 'Division Lesson + Practice', icon: '➗', color: 'bg-cyan-50 text-cyan-600 border-cyan-100' },
               { id: 'Equality', label: 'Equality', icon: '⚖️', color: 'bg-purple-50 text-purple-600 border-purple-100' },
               { id: 'Fractions', label: 'Fractions', icon: '🍕', color: 'bg-rose-50 text-rose-600 border-rose-100' },
               { id: 'Graphing', label: 'Data & Graphs', icon: '📊', color: 'bg-orange-50 text-orange-600 border-orange-100' },
@@ -414,6 +418,9 @@ export default function App() {
             message={tutorMessage} 
             onReplay={() => speechService.speak(tutorMessage)} 
           />
+          {currentProblem.skill === 'Division' && showDivisionLesson && (
+            <DivisionLesson onStartPractice={() => setShowDivisionLesson(false)} />
+          )}
 
           <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 mb-6 text-center">
             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">{currentProblem.prompt}</p>
@@ -589,6 +596,32 @@ export default function App() {
                     ))}
                   </div>
                 ))}
+              </div>
+            )}
+
+            {currentProblem.visualData?.type === 'division-groups' && (
+              <div className="mb-6 rounded-2xl border border-cyan-100 bg-cyan-50 p-4">
+                <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-cyan-500">
+                  Equal Groups Model
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {Array.from({ length: currentProblem.visualData.groups }).map((_, gi) => (
+                    <div key={gi} className="rounded-xl border border-cyan-200 bg-white p-2">
+                      <p className="text-[10px] font-bold text-cyan-500">Group {gi + 1}</p>
+                      <div className="mt-1 flex flex-wrap justify-center gap-1 min-h-[22px]">
+                        {Array.from({ length: currentProblem.visualData.groupSize }).map((__, ci) => (
+                          <motion.span
+                            key={ci}
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ delay: gi * 0.08 + ci * 0.04 }}
+                            className="inline-block h-3 w-3 rounded-full bg-cyan-500"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
