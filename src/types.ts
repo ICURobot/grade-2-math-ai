@@ -5,7 +5,7 @@
 
 export type Domain = 'Operations' | 'Algebra' | 'Measurement' | 'Data' | 'Number' | 'Geometry' | 'Financial Literacy' | 'Mixed';
 export type GradeLevel = 'grade2' | 'grade3';
-export type Grade2SkillArea = 'Addition' | 'Subtraction' | 'Division' | 'Equality' | 'Time' | 'Graphing' | 'Fractions';
+export type Grade2SkillArea = 'Addition' | 'Subtraction' | 'Division' | 'Equality' | 'Time' | 'Graphing' | 'Fractions' | 'Coins';
 export type Grade3Topic =
   | 'Place Value and Rounding'
   | 'Addition'

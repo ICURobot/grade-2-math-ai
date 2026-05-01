@@ -31,6 +31,7 @@ import { Tutor } from './components/Tutor';
 import { Keypad } from './components/Keypad';
 import { Dashboard } from './components/Dashboard';
 import { DivisionLesson } from './components/DivisionLesson';
+import { CoinsLesson } from './components/CoinsLesson';
 import { grade3Topics } from './content/grade3Topics';
 
 type View = 'home' | 'session' | 'dashboard' | 'summary';
@@ -53,6 +54,7 @@ export default function App() {
   const [hintCardVisible, setHintCardVisible] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [showDivisionLesson, setShowDivisionLesson] = useState(false);
+  const [showCoinsLesson, setShowCoinsLesson] = useState(false);
   
   // Graphing Discipline
   const [graphLabelsVerified, setGraphLabelsVerified] = useState(false);
@@ -120,6 +122,7 @@ export default function App() {
     setHintCardVisible(false);
     setIsCorrect(null);
     setShowDivisionLesson(grade === 'grade2' && selectedSkill === 'Division');
+    setShowCoinsLesson(grade === 'grade2' && selectedSkill === 'Coins');
     setGraphLabelsVerified(false);
     if (firstProblem.visualData?.buildMode) {
       setConstructionValues(firstProblem.visualData.values.map(() => 0));
@@ -315,6 +318,7 @@ export default function App() {
               { id: 'Fractions', label: 'Fractions', icon: '🍕', color: 'bg-rose-50 text-rose-600 border-rose-100' },
               { id: 'Graphing', label: 'Data & Graphs', icon: '📊', color: 'bg-orange-50 text-orange-600 border-orange-100' },
               { id: 'Time', label: 'Telling Time', icon: '⏰', color: 'bg-pink-50 text-pink-600 border-pink-100' },
+              { id: 'Coins', label: 'Canadian Coins', icon: '🪙', color: 'bg-amber-50 text-amber-600 border-amber-100' },
             ]
           : grade3Topics
         ).map((item) => (
@@ -420,6 +424,9 @@ export default function App() {
           />
           {currentProblem.skill === 'Division' && showDivisionLesson && (
             <DivisionLesson onStartPractice={() => setShowDivisionLesson(false)} />
+          )}
+          {currentProblem.skill === 'Coins' && showCoinsLesson && (
+            <CoinsLesson onStartPractice={() => setShowCoinsLesson(false)} />
           )}
 
           <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 mb-6 text-center">
@@ -632,6 +639,66 @@ export default function App() {
                 ))}
               </div>
             )}
+
+            {currentProblem.visualData?.type === 'coins-canadian' && (() => {
+              const coinMeta: Record<number, { bg: string; hl: string; border: string; text: string; textColor: string; name: string; sz: number }> = {
+                1:   { bg: '#C47722', hl: '#E8A040', border: '#8B5610', text: '1¢',  textColor: '#fff9f0', name: 'Penny',   sz: 44 },
+                5:   { bg: '#B8B8B8', hl: '#DCDCDC', border: '#787878', text: '5¢',  textColor: '#222',    name: 'Nickel',  sz: 50 },
+                10:  { bg: '#B8B8B8', hl: '#DCDCDC', border: '#787878', text: '10¢', textColor: '#222',    name: 'Dime',    sz: 40 },
+                25:  { bg: '#B8B8B8', hl: '#DCDCDC', border: '#787878', text: '25¢', textColor: '#222',    name: 'Quarter', sz: 58 },
+                100: { bg: '#C9A220', hl: '#EDD040', border: '#907010', text: '$1',  textColor: '#3D2600', name: 'Loonie',  sz: 64 },
+                200: { bg: '#C9A220', hl: '#EDD040', border: '#907010', text: '$2',  textColor: '#222',    name: 'Toonie',  sz: 68 },
+              };
+              return (
+                <div className="mb-6">
+                  <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-3">Canadian Coins 🍁</p>
+                  <div className="flex flex-wrap justify-center items-end gap-4">
+                    {(currentProblem.visualData.coins as number[]).map((coin, i) => {
+                      const m = coinMeta[coin] ?? coinMeta[10];
+                      const bw = Math.max(2, Math.round(m.sz * 0.05));
+                      const fs = m.sz < 42 ? 9 : m.sz < 52 ? 11 : 13;
+                      if (coin === 200) {
+                        return (
+                          <motion.div key={i} className="flex flex-col items-center gap-1"
+                            initial={{ scale: 0, opacity: 0, rotate: -15 }} animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                            transition={{ delay: i * 0.08, type: 'spring', stiffness: 220, damping: 14 }}>
+                            <div style={{ width: m.sz, height: m.sz, borderRadius: '50%',
+                              background: `radial-gradient(circle at 35% 30%, ${m.hl}, ${m.bg} 60%, #6A5000 100%)`,
+                              border: `${bw}px solid ${m.border}`,
+                              boxShadow: '0 3px 8px rgba(0,0,0,0.35), inset 0 1px 4px rgba(255,255,255,0.3)',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <div style={{ width: m.sz * 0.52, height: m.sz * 0.52, borderRadius: '50%',
+                                background: 'radial-gradient(circle at 35% 30%, #E8E8E8, #ADADAD 60%, #686868 100%)',
+                                border: '2px solid #808080', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.25)' }}>
+                                <span style={{ fontSize: 9, fontWeight: 900, color: '#333' }}>$2</span>
+                              </div>
+                            </div>
+                            <span style={{ fontSize: 9, fontWeight: 800, color: '#666' }}>Toonie</span>
+                          </motion.div>
+                        );
+                      }
+                      return (
+                        <motion.div key={i} className="flex flex-col items-center gap-1"
+                          initial={{ scale: 0, opacity: 0, rotate: -15 }} animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                          transition={{ delay: i * 0.08, type: 'spring', stiffness: 220, damping: 14 }}>
+                          <div style={{ width: m.sz, height: m.sz, borderRadius: '50%',
+                            background: `radial-gradient(circle at 35% 30%, ${m.hl}, ${m.bg} 65%, ${m.border} 100%)`,
+                            border: `${bw}px solid ${m.border}`,
+                            boxShadow: '0 3px 8px rgba(0,0,0,0.3), inset 0 1px 3px rgba(255,255,255,0.4)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <span style={{ fontSize: fs, fontWeight: 900, color: m.textColor, textShadow: '0 1px 2px rgba(0,0,0,0.25)' }}>
+                              {m.text}
+                            </span>
+                          </div>
+                          <span style={{ fontSize: 9, fontWeight: 800, color: '#666' }}>{m.name}</span>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
 
             {currentProblem.visualData?.type === 'grid-rect' && (
               <div className="mb-6 flex justify-center">
