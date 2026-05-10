@@ -27,6 +27,8 @@ export const generateProblem = (skill: SkillArea, difficulty: Difficulty, grade:
       return generateTime(id, difficulty);
     case 'Fractions':
       return generateFractions(id, difficulty);
+    case 'Coins':
+      return generateCoins(id, difficulty);
     default:
       return generateAddition(id, difficulty);
   }
@@ -514,6 +516,123 @@ function generateFractions(id: string, difficulty: Difficulty): Problem {
       solution: `The bar has ${denom} equal parts and ${numer} are shaded, so the fraction is ${fraction}.`,
       success: 'You read the fraction perfectly! Fraction superstar!'
     }
+  };
+}
+
+function generateCoins(id: string, difficulty: Difficulty): Problem {
+  let coins: number[] = [];
+  let subskill = 'same-coins';
+
+  const fmt = (cents: number): string => {
+    if (cents >= 100) {
+      const d = Math.floor(cents / 100);
+      const c = cents % 100;
+      return c > 0 ? `$${d}.${String(c).padStart(2, '0')}` : `$${d}.00`;
+    }
+    return `${cents}¢`;
+  };
+
+  if (difficulty === 'easy') {
+    const coinType = [5, 10, 25][Math.floor(Math.random() * 3)];
+    const count = coinType === 25
+      ? Math.floor(Math.random() * 3) + 2  // 2–4 quarters
+      : Math.floor(Math.random() * 3) + 3; // 3–5 nickels or dimes
+    coins = Array(count).fill(coinType);
+    subskill = 'same-coins';
+  } else if (difficulty === 'medium') {
+    subskill = 'mixed-coins';
+    const allTypes = [1, 5, 10, 25].sort(() => Math.random() - 0.5);
+    const numTypes = Math.random() > 0.5 ? 3 : 2;
+    const selected = allTypes.slice(0, numTypes);
+    coins = [];
+    for (const t of selected) {
+      const n = Math.floor(Math.random() * 3) + 1;
+      for (let i = 0; i < n; i++) coins.push(t);
+    }
+    // Keep total ≤ 99¢
+    coins.sort((a, b) => b - a);
+    while (coins.reduce((s, c) => s + c, 0) > 99 && coins.length > 2) coins.pop();
+    coins.sort(() => Math.random() - 0.5);
+  } else {
+    subskill = 'dollars-and-cents';
+    const usesToonie = Math.random() > 0.5;
+    coins = [];
+    if (usesToonie) {
+      coins.push(200);
+      const extras = [25, 25, 10, 10, 5];
+      const n = Math.floor(Math.random() * 3) + 2;
+      for (let i = 0; i < n; i++) coins.push(extras[Math.floor(Math.random() * extras.length)]);
+    } else {
+      const numLoonies = Math.floor(Math.random() * 2) + 1;
+      for (let i = 0; i < numLoonies; i++) coins.push(100);
+      const extras = [25, 25, 10, 5];
+      const n = Math.floor(Math.random() * 3) + 2;
+      for (let i = 0; i < n; i++) coins.push(extras[Math.floor(Math.random() * extras.length)]);
+    }
+    // Cap at $5
+    coins.sort((a, b) => b - a);
+    while (coins.reduce((s, c) => s + c, 0) > 500 && coins.length > 2) coins.pop();
+    coins.sort(() => Math.random() - 0.5);
+  }
+
+  const total = coins.reduce((s, c) => s + c, 0);
+  const correctAnswer = fmt(total);
+
+  // Generate 3 plausible wrong choices using coin-size offsets
+  const offsets = [-25, -10, -5, 5, 10, 25, -20, 15, 20, -15].sort(() => Math.random() - 0.5);
+  const wrongSet = new Set<string>();
+  for (const off of offsets) {
+    const w = total + off;
+    if (w > 0 && fmt(w) !== correctAnswer) {
+      wrongSet.add(fmt(w));
+      if (wrongSet.size >= 3) break;
+    }
+  }
+  const choices = [correctAnswer, ...Array.from(wrongSet)].sort(() => Math.random() - 0.5);
+
+  const nameOf: Record<number, string> = { 1: 'penny', 5: 'nickel', 10: 'dime', 25: 'quarter', 100: 'loonie', 200: 'toonie' };
+  const coinCounts: Record<number, number> = {};
+  coins.forEach(c => { coinCounts[c] = (coinCounts[c] || 0) + 1; });
+  const coinSummary = Object.entries(coinCounts)
+    .sort(([a], [b]) => Number(b) - Number(a))
+    .map(([v, n]) => `${n} ${nameOf[Number(v)]}${Number(n) > 1 ? 's' : ''}`)
+    .join(', ');
+
+  const sortedDesc = [...coins].sort((a, b) => b - a);
+  let running = 0;
+  const countingSteps = sortedDesc.map(c => {
+    running += c;
+    return `${fmt(c)} → total so far: ${fmt(running)}`;
+  });
+
+  return {
+    id,
+    grade: 'grade2',
+    domain: 'Financial Literacy',
+    skill: 'Coins',
+    subskill,
+    difficulty,
+    prompt: 'Count the Canadian coins.',
+    question: 'What is the total value?',
+    correctAnswer,
+    choices,
+    visualData: { type: 'coins-canadian', coins },
+    steps: [
+      { label: 'Sort Largest First', content: `Start with the biggest coin: ${[...new Set(sortedDesc)].map(fmt).join(' → ')}` },
+      { label: 'Count Up', content: countingSteps.join('\n') },
+      { label: 'Total', content: `Total = ${correctAnswer}` },
+    ],
+    hints: [
+      'Start counting with the biggest coin, then add smaller coins one at a time.',
+      `You have: ${coinSummary}. Add them from largest to smallest!`,
+    ],
+    narrations: {
+      intro: `Look at these Canadian coins! Can you count how much money is here in total?`,
+      hint1: 'Always start with the biggest coin. Then count up by adding each smaller coin.',
+      hint2: `You have ${coinSummary}. Begin with the largest and keep adding!`,
+      solution: `Count from largest to smallest: ${countingSteps.join(', ')}. The total is ${correctAnswer}.`,
+      success: `You counted those Canadian coins perfectly! You're a money superstar! 🍁`,
+    },
   };
 }
 
